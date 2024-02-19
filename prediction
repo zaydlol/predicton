@@ -1,0 +1,360 @@
+import discord
+
+from discord.ext import commands
+
+import random
+
+import hashlib
+
+
+
+intents = discord.Intents.default()
+
+intents.messages = True
+
+intents.message_content = True
+
+
+
+client = commands.Bot(command_prefix='!', intents=intents)
+
+
+
+def sha256(s):
+
+    return hashlib.sha256(s.encode()).hexdigest()
+
+
+
+def generate_random_seed(length):
+
+    characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+    return ''.join(random.choice(characters) for _ in range(length))
+
+
+
+@client.event
+
+async def on_ready():
+
+    print(f'We have logged in as {client.user}')
+
+
+
+# Mines Command
+
+@client.command(name='mines')
+
+async def mines(ctx, level: int = None, game_seed_input: str = None):
+
+    gem_emoji = '<:gem112:1201112349474557992>'
+
+    bomb_emoji = '<:bomb112:1201112231996305458>'
+
+
+
+    paid_role = discord.utils.get(ctx.guild.roles, name="paid")
+
+    if paid_role not in ctx.author.roles:
+
+        await ctx.send("You need the 'paid' role to use this command.")
+
+        return
+
+
+
+    levels = [
+
+        {"mines": 1, "gems": 24},
+
+        {"mines": 2, "gems": 23},
+
+      {"mines": 3, "gems": 22},
+
+      {"mines": 4, "gems": 21},
+
+      {"mines": 5, "gems": 20},
+
+      {"mines": 6, "gems": 19},
+
+      {"mines": 7, "gems": 18},
+
+      {"mines": 8, "gems": 17},
+
+      {"mines": 9, "gems": 16},
+
+      {"mines": 10, "gems": 15},
+
+      {"mines": 11, "gems": 14},
+
+      {"mines": 12, "gems": 13},
+
+      {"mines": 13, "gems": 12},
+
+      {"mines": 14, "gems": 11},
+
+      {"mines": 15, "gems": 10},
+
+      {"mines": 16, "gems": 9},
+
+      {"mines": 17, "gems": 8},
+
+      {"mines": 18, "gems": 7},
+
+      {"mines": 19, "gems": 6},
+
+      {"mines": 20, "gems": 5},
+
+      {"mines": 21, "gems": 4},
+
+      {"mines": 22, "gems": 3},
+
+      {"mines": 23, "gems": 2},
+
+      {"mines": 24, "gems": 1},
+
+    ]
+
+
+
+    if level is None or level < 1 or level > 24:
+
+        await ctx.send("Choose a level to begin predicting.")
+
+        return
+
+
+
+    chosen_level = levels[level - 1]
+
+
+
+    if game_seed_input is None:
+
+        await ctx.send("You haven't entered a seed, please try again.")
+
+        return
+
+    elif game_seed_input.lower() == 'random':
+
+        game_seed = generate_random_seed(10)
+
+    else:
+
+        game_seed = game_seed_input
+
+
+
+    emojis = random.sample([bomb_emoji] * chosen_level["mines"] + [gem_emoji] * chosen_level["gems"], 25)
+
+    emojis_chunked = [emojis[i:i + 5] for i in range(0, len(emojis), 5)]
+
+    response = '\n'.join([''.join(line) for line in emojis_chunked])
+
+
+
+    accuracy = random.uniform(50, 95)
+
+    safe_cashout_options = ["1.50", "2", "2.50", "3"]
+
+    chosen_cashout = random.choice(safe_cashout_options)
+
+
+
+    embed = discord.Embed(title="GrowDice Predictor", color=discord.Color.from_rgb(0, 0, 0))
+
+    embed.add_field(name="Mines prediction:", value=f"{response}", inline=False)
+
+    embed.add_field(name="Accuracy:", value=f"{accuracy:.2f}%", inline=False)
+
+    embed.add_field(name="Safe Cashout:", value=f"{chosen_cashout}x", inline=False)
+
+    embed.add_field(name="Level:", value=f"Level {levels.index(chosen_level) + 1}", inline=False)
+
+    embed.add_field(name="Game Seed:", value=game_seed, inline=False)
+
+    embed.set_footer(text="Made by zaydnoname")
+
+
+
+    await ctx.send(embed=embed)
+
+
+
+# Coinflip Command
+
+@client.command(name='coinflip')
+
+async def coinflip(ctx, seed=None):
+
+    if discord.utils.get(ctx.author.roles, name="paid"):
+
+        if seed is None:
+
+            await ctx.send("Enter a seed to begin predicting.")
+
+            return
+
+
+
+        random.seed(seed)
+
+
+
+        heads_emoji = '<:heads112:1203246631584272404>'
+
+        tales_emoji = '<:tales112:1203246538491568169>'
+
+
+
+        emojis = [heads_emoji, tales_emoji]
+
+        result = ''.join(random.choice(emojis) for _ in range(10))
+
+
+
+        safe_cashout = random.choice(['1', '2', '3'])
+
+        accuracy = random.randint(50, 70)
+
+
+
+        embed = discord.Embed(
+
+            title='Coinflip Growdice Predictor',
+
+            description=f'{result}\n\nAccuracy: {accuracy}\nSafe Cashout: {safe_cashout}\nSeed: {seed}',
+
+            color=0x000000
+
+        )
+
+        embed.set_footer(text="Made by zaydnoname")
+
+        await ctx.send(embed=embed)
+
+    else:
+
+        await ctx.send("You haven't purchased the predictor so you can't access it.")
+
+
+
+# Roulette Command
+
+@client.command(name='roulette')
+
+async def roulette(ctx, seed=None):
+
+    if seed is None:
+
+        await ctx.send("Enter a seed to begin predicting.")
+
+        return
+
+
+
+    if discord.utils.get(ctx.author.roles, name="paid"):
+
+        random.seed(seed)
+
+        emojis = ['⬛️', '🟥', '🟩']
+
+        rarities = [0.5, 0.5, 0.01]
+
+        prediction = random.choices(emojis, rarities)[0]
+
+
+
+        accuracy = random.uniform(50, 85)
+
+
+
+        embed = discord.Embed(
+
+            title='Roulette Predictor',
+
+            description=f'Prediction: {prediction}\nAccuracy: {accuracy:.2f}%',
+
+            color=0x000000
+
+        )
+
+        embed.set_footer(text="Made by zaydnoname")
+
+
+
+        await ctx.send(embed=embed)
+
+    else:
+
+        await ctx.send("You haven't purchased the predictor so you can't access it.")
+
+
+
+# Crash Command
+
+@client.command(name='crash')
+
+async def generate_crash(ctx, seed=None):
+
+    if seed is None:
+
+        await ctx.send("Enter a seed to begin predicting.")
+
+        return
+
+
+
+    if discord.utils.get(ctx.author.roles, name="paid"):
+
+        random.seed(seed)
+
+        rand_num = random.uniform(0, 1)
+
+        if rand_num < 0.5:
+
+            random_number = round(random.uniform(1.5, 3.5), 2)
+
+        elif rand_num < 0.8:
+
+            random_number = round(random.uniform(3.5, 10), 2)
+
+        else:
+
+            random_number = round(random.uniform(10, 50), 2)
+
+
+
+        safest_cashout = round(random.uniform(1, 1.7), 2)
+
+
+
+        accuracy = round(random.uniform(50, 70), 2)
+
+
+
+        embed = discord.Embed(title="Crash Predictor", color=0x000000)
+
+        embed.add_field(name="crash", value=f"will crash at {random_number}", inline=False)
+
+        embed.add_field(name="safest cashout", value=f"{safest_cashout}", inline=False)
+
+        embed.add_field(name="accuracy", value=f"{accuracy}%", inline=False)
+
+        embed.set_footer(text="Made by zaydnoname")
+
+
+
+        await ctx.send(embed=embed)
+
+    else:
+
+        await ctx.send("You haven't purchased the crash predictor so you can't access it.")
+
+
+
+# Replace 'YOUR_BOT_TOKEN' with your actual bot token
+
+client.run('MTIwMDE4NDAzNDUzNDM3OTYyMg.GjrjHZ.xnrV00FejI7snH8W7XOzLput9umFn2qkakTFTw')
+
